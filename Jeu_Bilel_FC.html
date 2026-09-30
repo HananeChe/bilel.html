@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0B1F17">
+</head>
+<body>
+<title>Bilel FC — Tables</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;800&family=Barlow:wght@400;600;700&display=swap">
+<style>
+/* Stade de nuit : pelouse rayée sombre, craie blanche, jaune "tableau d'affichage". Un seul look, volontairement sombre. */
+:root{
+  --night:#0B1F17; --pitch:#123A2A; --pitch2:#16452F; --chalk:#F2F7F3; --muted:#9DB8AA;
+  --score:#FFC72C; --goal:#3DDC84; --miss:#FF5A5F; --panel:#0F2C20; --line:rgba(242,247,243,.18);
+  --display:"Saira Condensed","Arial Narrow",Impact,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--night);color:var(--chalk);font-family:var(--body);font-size:16px;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.app{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:12px 24px;min-height:100%;display:flex;flex-direction:column;gap:14px}
+button{font-family:inherit;color:inherit;cursor:pointer;border:none}
+button:focus-visible{outline:3px solid var(--score);outline-offset:3px}
+h1,h2,h3{font-family:var(--display);font-weight:800;letter-spacing:.02em;margin:0;text-wrap:balance}
+
+.top{display:flex;align-items:center;gap:12px}
+.crest{width:44px;height:44px;flex:none}
+.top h1{font-size:1.7rem;line-height:1;text-transform:uppercase}
+.top h1 span{color:var(--score)}
+.top .back{margin-left:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-weight:700}
+
+.screen[hidden]{display:none!important}
+.label{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-size:.9rem}
+
+/* accueil */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.presets{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.preset{background:var(--pitch);border:2px solid transparent;border-radius:12px;padding:10px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.preset b{font-family:var(--display);font-size:1.15rem;text-transform:uppercase;letter-spacing:.03em}
+.preset small{color:var(--muted)}
+.preset[aria-pressed="true"]{border-color:var(--score)}
+.chips{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
+.chip{aspect-ratio:1;border-radius:50%;background:var(--pitch);border:2px solid var(--line);font-family:var(--display);font-weight:800;font-size:1.3rem;max-width:100%}
+.chip[aria-pressed="true"]{background:var(--score);color:var(--night);border-color:var(--score)}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mode{border-radius:16px;padding:18px 14px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:130px;
+  background:repeating-linear-gradient(90deg,var(--pitch) 0 34px,var(--pitch2) 34px 68px);border:2px solid var(--line)}
+.mode h2{font-size:1.8rem;text-transform:uppercase}
+.mode p{margin:0;color:var(--muted);line-height:1.35}
+.mode.match{border-color:var(--score)}
+.statlink{background:transparent;border:1px dashed var(--line);border-radius:12px;padding:12px;font-weight:700;color:var(--muted)}
+@media (max-width:520px){.chips{grid-template-columns:repeat(5,1fr)}.modes{grid-template-columns:1fr}}
+
+/* jeu */
+.board{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#06130D;border:1px solid var(--line);border-radius:12px;padding:8px 14px;
+  font-family:var(--display);font-weight:800;font-variant-numeric:tabular-nums}
+.board .team{font-size:1rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);min-width:0}
+.board .nums{font-size:2rem;color:var(--score);white-space:nowrap}
+.board .clock{font-size:1.2rem;color:var(--chalk);min-width:64px;text-align:right}
+.shots{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;min-height:18px}
+.shots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);display:block}
+.shots i.g{background:var(--goal);border-color:var(--goal)}
+.shots i.m{background:var(--miss);border-color:var(--miss)}
+
+.field{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:16/8;max-width:100%;
+  background:repeating-linear-gradient(90deg,var(--pitch) 0 12.5%,var(--pitch2) 12.5% 25%)}
+.field svg.goal{position:absolute;left:50%;top:6%;width:70%;transform:translateX(-50%)}
+.keeper{position:absolute;left:50%;top:22%;width:12%;transform:translateX(-50%);transition:transform .35s ease-out}
+.keeper.dive-left{transform:translateX(-160%) rotate(-40deg)}
+.keeper.dive-right{transform:translateX(60%) rotate(40deg)}
+.keeper.stay{transform:translateX(-50%) translateY(-6%) scale(1.08)}
+.ball{position:absolute;left:50%;bottom:6%;width:9%;aspect-ratio:1;transform:translate(-50%,0);transition:transform .45s cubic-bezier(.2,.7,.3,1)}
+.ball.to-left{transform:translate(-330%,-340%) scale(.55)}
+.ball.to-right{transform:translate(230%,-340%) scale(.55)}
+.ball.to-center{transform:translate(-50%,-300%) scale(.6)}
+.flash{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;
+  font-size:clamp(2.4rem,11vw,4.6rem);text-transform:uppercase;letter-spacing:.04em;pointer-events:none;opacity:0;transition:opacity .2s}
+.flash.on{opacity:1}
+.flash.goal{color:var(--score);text-shadow:0 4px 0 #000}
+.flash.save{color:var(--chalk);text-shadow:0 4px 0 #000}
+
+.question{display:flex;align-items:center;justify-content:center;gap:12px;font-family:var(--display);font-weight:800;font-variant-numeric:tabular-nums}
+.question .q{font-size:clamp(2.6rem,12vw,4.2rem)}
+.question .a{min-width:2.4em;text-align:center;font-size:clamp(2.6rem,12vw,4.2rem);border-bottom:4px solid var(--score);color:var(--score);line-height:1.1}
+.hint{text-align:center;color:var(--muted);min-height:1.4em;font-weight:600}
+.hint b{color:var(--chalk)}
+
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.key{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding-block:12px;font-family:var(--display);font-weight:800;font-size:1.9rem;font-variant-numeric:tabular-nums}
+.key:active{background:var(--pitch2)}
+.key.ok{background:var(--score);color:var(--night)}
+.key.del{font-size:1.2rem}
+
+/* fin + stats */
+.end{text-align:center;align-items:center}
+.end h2{font-size:clamp(2.2rem,9vw,3.4rem);text-transform:uppercase;color:var(--score)}
+.end p{margin:0;color:var(--muted);line-height:1.45;max-width:46ch}
+.btn{background:var(--score);color:var(--night);border-radius:12px;padding:12px 22px;font-family:var(--display);font-weight:800;font-size:1.3rem;text-transform:uppercase}
+.btn.ghost{background:var(--panel);color:var(--chalk);border:1px solid var(--line)}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.review{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.review span{background:var(--pitch);border:1px solid var(--miss);border-radius:8px;padding:4px 8px;font-weight:700;font-variant-numeric:tabular-nums}
+
+.gridwrap{overflow-x:auto}
+table.stats{border-collapse:separate;border-spacing:3px;margin:0 auto;font-variant-numeric:tabular-nums}
+.stats th{font-family:var(--display);font-weight:800;color:var(--score);width:32px;height:30px;font-size:1.05rem}
+.stats td{width:32px;height:30px;text-align:center;border-radius:6px;background:var(--pitch);color:var(--muted);font-size:.8rem;font-weight:600}
+.stats td.l1{background:#6B5A14;color:var(--chalk)}
+.stats td.l2{background:var(--goal);color:var(--night)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;color:var(--muted);font-size:.9rem}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.big{font-family:var(--display);font-weight:800;font-size:2.6rem;color:var(--score);line-height:1}
+.reset{background:transparent;color:var(--muted);text-decoration:underline;font-size:.85rem}
+.confirm{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:.9rem}
+
+@media (prefers-reduced-motion:reduce){.ball,.keeper{transition:none}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <svg class="crest" viewBox="0 0 44 44" aria-hidden="true">
+      <path d="M22 2 L40 8 V22 C40 33 31 40 22 42 C13 40 4 33 4 22 V8 Z" fill="#FFC72C"/>
+      <path d="M22 6 L36 11 V22 C36 31 29 36 22 38 C15 36 8 31 8 22 V11 Z" fill="#0B1F17"/>
+      <text x="22" y="29" text-anchor="middle" font-family="Saira Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="12" fill="#FFC72C">BFC</text>
+    </svg>
+    <h1>Bilel <span>FC</span></h1>
+    <button class="back" id="backBtn" hidden>Vestiaire</button>
+  </header>
+
+  <!-- ACCUEIL -->
+  <section class="screen" id="home" style="display:flex;flex-direction:column;gap:14px">
+    <div class="panel">
+      <div class="label">Choisis tes tables</div>
+      <div class="presets" id="presets"></div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="modes">
+      <button class="mode" id="goPen"><h2>Tirs au but</h2><p>10 tirs, sans chrono. Chaque raté revient à la fin.</p></button>
+      <button class="mode match" id="goMatch"><h2>Match</h2><p>90 secondes. Bonne réponse : but pour toi. Mauvaise : but pour l'adversaire.</p></button>
+    </div>
+    <button class="statlink" id="goStats">Mes stats : quelles tables je connais déjà</button>
+  </section>
+
+  <!-- JEU -->
+  <section class="screen" id="game" hidden style="display:flex;flex-direction:column;gap:12px">
+    <div class="board">
+      <div class="team" id="teamL">Bilel FC</div>
+      <div class="nums" id="nums">0 – 0</div>
+      <div class="clock" id="clock">Tir 1</div>
+    </div>
+    <div class="shots" id="shots"></div>
+    <div class="field">
+      <svg class="goal" viewBox="0 0 300 110" aria-hidden="true">
+        <defs><pattern id="net" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M0 0 L10 10 M10 0 L0 10" stroke="rgba(242,247,243,.25)" stroke-width="1"/></pattern></defs>
+        <rect x="6" y="6" width="288" height="104" fill="url(#net)"/>
+        <path d="M6 110 V6 H294 V110" fill="none" stroke="#F2F7F3" stroke-width="7" stroke-linejoin="round"/>
+      </svg>
+      <svg class="keeper" id="keeper" viewBox="0 0 40 70" aria-hidden="true">
+        <line x1="8" y1="26" x2="0" y2="8" stroke="#FF8A3D" stroke-width="6" stroke-linecap="round"/>
+        <line x1="32" y1="26" x2="40" y2="8" stroke="#FF8A3D" stroke-width="6" stroke-linecap="round"/>
+        <rect x="10" y="20" width="20" height="26" rx="5" fill="#FF8A3D"/>
+        <rect x="11" y="46" width="7" height="22" rx="3" fill="#20242A"/><rect x="22" y="46" width="7" height="22" rx="3" fill="#20242A"/>
+        <circle cx="20" cy="12" r="8" fill="#C98E62"/>
+      </svg>
+      <svg class="ball" id="ball" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" fill="#fff" stroke="#16302B" stroke-width="2"/>
+        <polygon points="20,12 27,17 24.5,25 15.5,25 13,17" fill="#16302B"/>
+      </svg>
+      <div class="flash" id="flash"></div>
+    </div>
+    <div class="question" aria-live="polite"><span class="q" id="q">7 × 8 =</span><span class="a" id="a">&nbsp;</span></div>
+    <div class="hint" id="hint">Tape ta réponse puis Tirer.</div>
+    <div class="pad" id="pad"></div>
+  </section>
+
+  <!-- FIN -->
+  <section class="screen panel end" id="end" hidden>
+    <h2 id="endTitle">Victoire !</h2>
+    <div class="big" id="endScore">8 / 10</div>
+    <p id="endText"></p>
+    <div class="label" id="reviewLabel">À revoir</div>
+    <div class="review" id="review"></div>
+    <div class="row"><button class="btn" id="again">Rejouer</button><button class="btn ghost" id="toHome">Vestiaire</button></div>
+  </section>
+
+  <!-- STATS -->
+  <section class="screen panel" id="stats" hidden>
+    <div class="row" style="align-items:baseline;justify-content:space-between">
+      <h2 style="font-size:1.8rem;text-transform:uppercase">Mes stats</h2>
+      <div><span class="big" id="known">0</span> <span class="label">/ 100 sus par cœur</span></div>
+    </div>
+    <div class="legend"><span><i style="background:var(--goal)"></i>Je sais par cœur</span><span><i style="background:#6B5A14"></i>En progrès</span><span><i style="background:var(--pitch)"></i>Pas encore</span></div>
+    <div class="gridwrap"><table class="stats" id="grid"></table></div>
+    <p class="label" style="text-align:center;margin:0" id="best"></p>
+    <div class="confirm" id="resetZone"><button class="reset" id="resetBtn">Remettre les stats à zéro</button></div>
+  </section>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const rnd=n=>Math.floor(Math.random()*n);
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+/* ---- stockage (sur cet appareil uniquement) ---- */
+const KEY="bilelfc-v1";
+let store={facts:{},best:0,sel:[1,2,5,10]};
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&s.facts)store=Object.assign(store,s);}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){}}
+const fk=(a,b)=>Math.min(a,b)+"x"+Math.max(a,b);
+const lvl=(a,b)=>{const v=store.facts[fk(a,b)]||0;return v>=3?2:v>0?1:0;};
+function record(a,b,ok,fast){const k=fk(a,b);let v=store.facts[k]||0;v=ok?v+(fast?1:.5):Math.max(0,v-1.5);store.facts[k]=Math.min(v,6);save();}
+
+/* ---- accueil ---- */
+const PRESETS=[
+  {n:"Semaine 1",d:"Tables 1, 2, 5, 10",t:[1,2,5,10]},
+  {n:"Semaine 2",d:"Tables 3, 4, 9",t:[3,4,9]},
+  {n:"Semaine 3",d:"Tables 6, 7, 8",t:[6,7,8]},
+  {n:"Toutes",d:"De 1 à 10",t:[1,2,3,4,5,6,7,8,9,10]}];
+let sel=new Set(store.sel);
+function drawHome(){
+  $("presets").innerHTML="";
+  PRESETS.forEach(p=>{const b=document.createElement("button");b.className="preset";
+    const same=p.t.length===sel.size&&p.t.every(x=>sel.has(x));b.setAttribute("aria-pressed",same);
+    b.innerHTML=`<b>${p.n}</b><small>${p.d}</small>`;b.onclick=()=>{sel=new Set(p.t);keepSel();};$("presets").appendChild(b);});
+  $("chips").innerHTML="";
+  for(let t=1;t<=10;t++){const b=document.createElement("button");b.className="chip";b.textContent=t;
+    b.setAttribute("aria-pressed",sel.has(t));b.setAttribute("aria-label","table de "+t);
+    b.onclick=()=>{sel.has(t)?sel.delete(t):sel.add(t);if(!sel.size)sel.add(t);keepSel();};$("chips").appendChild(b);}
+}
+function keepSel(){store.sel=[...sel];save();drawHome();}
+
+/* ---- navigation ---- */
+function show(id){["home","game","end","stats"].forEach(s=>$(s).hidden=s!==id);$("backBtn").hidden=id==="home";if(id==="home")drawHome();if(id==="stats")drawStats();}
+$("backBtn").onclick=()=>{stopClock();show("home");};
+$("toHome").onclick=()=>show("home");
+$("goStats").onclick=()=>show("stats");
+
+/* ---- choix des questions : les moins sues reviennent plus souvent ---- */
+let last="";
+function pick(){
+  const pool=[];
+  sel.forEach(t=>{for(let b=1;b<=10;b++){const w=[4,2,1][lvl(t,b)];for(let k=0;k<w;k++)pool.push([t,b]);}});
+  let q,tries=0;
+  do{q=pool[rnd(pool.length)];tries++;}while(fk(q[0],q[1])===last&&tries<10);
+  last=fk(q[0],q[1]);
+  return Math.random()<.5?[q[0],q[1]]:[q[1],q[0]];
+}
+
+/* ---- clavier ---- */
+let typed="",busy=false;
+const keys=["1","2","3","4","5","6","7","8","9","del","0","ok"];
+keys.forEach(k=>{const b=document.createElement("button");b.className="key"+(k==="ok"?" ok":k==="del"?" del":"");
+  b.textContent=k==="del"?"Effacer":k==="ok"?"Tirer":k;b.onclick=()=>press(k);$("pad").appendChild(b);});
+document.addEventListener("keydown",e=>{if($("game").hidden)return;
+  if(/^[0-9]$/.test(e.key))press(e.key);else if(e.key==="Backspace")press("del");else if(e.key==="Enter")press("ok");});
+function press(k){
+  if(busy)return;
+  if(k==="del"){typed=typed.slice(0,-1);}
+  else if(k==="ok"){if(typed)shoot();return;}
+  else if(typed.length<3){typed+=k;}
+  $("a").innerHTML=typed||"&nbsp;";
+}
+
+/* ---- partie ---- */
+let mode="pen",cur=null,shots=[],retry=[],us=0,them=0,asked=0,missed=[],t0=0,timer=null,timeLeft=90;
+const PEN_SHOTS=10;
+function start(m){
+  mode=m;shots=[];retry=[];missed=[];us=0;them=0;asked=0;
+  $("teamL").textContent="Bilel FC";
+  if(mode==="match"){timeLeft=90;$("clock").textContent="1:30";startClock();}
+  show("game");updBoard();next();
+}
+$("goPen").onclick=()=>start("pen");
+$("goMatch").onclick=()=>start("match");
+$("again").onclick=()=>start(mode);
+
+function updBoard(){
+  $("nums").textContent=us+" – "+them;
+  if(mode==="pen"){
+    $("clock").textContent=asked<PEN_SHOTS?"Tir "+(asked+1):"Rattrapage";
+    $("shots").innerHTML=shots.map(s=>`<i class="${s?"g":"m"}"></i>`).join("")+"<i></i>".repeat(Math.max(0,PEN_SHOTS-shots.length));
+  }else $("shots").innerHTML="";
+}
+function next(){
+  resetScene();typed="";$("a").innerHTML="&nbsp;";busy=false;
+  if(mode==="pen"&&asked>=PEN_SHOTS){if(retry.length){cur=retry.shift();}else return finish();}
+  else cur=pick();
+  $("q").textContent=cur[0]+" × "+cur[1]+" =";
+  $("hint").innerHTML=mode==="pen"&&asked>=PEN_SHOTS?"Tir de rattrapage : celui-là, tu l'avais raté.":"Tape ta réponse puis <b>Tirer</b>.";
+  t0=performance.now();
+}
+function shoot(){
+  busy=true;
+  const [a,b]=cur,ok=+typed===a*b,fast=performance.now()-t0<5000;
+  record(a,b,ok,fast);
+  const side=["to-left","to-right"][rnd(2)];
+  const ball=$("ball"),keeper=$("keeper"),flash=$("flash");
+  if(ok){ball.classList.add(side);keeper.classList.add(side==="to-left"?"dive-right":"dive-left");
+    flash.textContent="But !";flash.className="flash goal on";us++;
+    $("hint").innerHTML=fast?"Tir parfait, et rapide !":"But ! Essaie d'aller encore plus vite.";
+    try{navigator.vibrate&&navigator.vibrate(60);}catch(e){}
+  }else{ball.classList.add("to-center");keeper.classList.add("stay");
+    flash.textContent="Arrêté !";flash.className="flash save on";
+    $("hint").innerHTML=`${a} × ${b} = <b>${a*b}</b>. Retiens-le, il va revenir.`;
+    if(!missed.some(m=>fk(m[0],m[1])===fk(a,b)))missed.push([a,b]);
+    if(mode==="match")them++;
+  }
+  if(mode==="pen"){
+    if(asked<PEN_SHOTS){shots.push(ok);if(!ok)retry.push([a,b]);}
+    else if(!ok)retry.push([a,b]);
+    asked++;
+  }
+  updBoard();
+  setTimeout(()=>{if(!$("game").hidden)next();},ok?1100:2300);
+}
+function resetScene(){$("ball").className="ball";$("keeper").className="keeper";$("flash").className="flash";}
+
+function startClock(){stopClock();timer=setInterval(()=>{timeLeft--;
+  $("clock").textContent=Math.floor(timeLeft/60)+":"+String(timeLeft%60).padStart(2,"0");
+  if(timeLeft<=0){stopClock();setTimeout(finish,busy?1200:0);}},1000);}
+function stopClock(){if(timer)clearInterval(timer);timer=null;}
+
+function finish(){
+  stopClock();
+  if(mode==="pen"){
+    const g=shots.filter(Boolean).length;
+    $("endTitle").textContent=g>=9?"Buteur en or !":g>=6?"Beau match !":"On continue l'entraînement";
+    $("endScore").textContent=g+" / "+PEN_SHOTS;
+    $("endText").textContent=g===PEN_SHOTS?"Aucun tir raté. Tu peux passer aux tables suivantes.":"Les tirs ratés sont revenus à la fin jusqu'à ce que tu les réussisses.";
+  }else{
+    store.best=Math.max(store.best||0,us);save();
+    $("endTitle").textContent=us>them?"Victoire !":us===them?"Match nul":"Défaite, on rejoue ?";
+    $("endScore").textContent=us+" – "+them;
+    $("endText").textContent="Record de buts en un match : "+store.best+".";
+  }
+  $("reviewLabel").hidden=!missed.length;
+  $("review").innerHTML=missed.map(([a,b])=>`<span>${a} × ${b} = ${a*b}</span>`).join("");
+  show("end");
+}
+
+/* ---- stats ---- */
+function drawStats(){
+  let h="<tr><th>×</th>"+[...Array(10)].map((_,i)=>`<th>${i+1}</th>`).join("")+"</tr>",known=0;
+  for(let a=1;a<=10;a++){h+=`<tr><th>${a}</th>`;for(let b=1;b<=10;b++){const l=lvl(a,b);if(l===2)known++;h+=`<td class="l${l}">${a*b}</td>`;}h+="</tr>";}
+  $("grid").innerHTML=h;$("known").textContent=known;
+  $("best").textContent=store.best?"Record en match : "+store.best+" buts":"Joue un match pour établir ton record.";
+  $("resetZone").innerHTML='<button class="reset" id="resetBtn">Remettre les stats à zéro</button>';
+  $("resetBtn").onclick=()=>{$("resetZone").innerHTML='Tout effacer ? <button class="btn ghost" id="yes" style="font-size:1rem;padding:6px 12px">Oui</button> <button class="btn" id="no" style="font-size:1rem;padding:6px 12px">Non</button>';
+    $("yes").onclick=()=>{store.facts={};store.best=0;save();drawStats();};$("no").onclick=drawStats;};
+}
+
+show("home");
+})();
+</script>
+
+</body>
+</html>
